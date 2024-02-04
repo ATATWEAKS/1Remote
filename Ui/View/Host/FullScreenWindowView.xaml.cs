@@ -30,6 +30,7 @@ namespace _1RM.View.Host
                 }
             }
         }
+        public string LastTabToken { get; set; } = "";
 
         public static FullScreenWindowView Create(string token, HostBase host, TabWindowView? fromTab)
         {
@@ -117,6 +118,5 @@ namespace _1RM.View.Host
             });
         }
 
-        public string LastTabToken { get; set; } = "";
     }
 }
