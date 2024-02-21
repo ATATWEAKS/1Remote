@@ -27,7 +27,7 @@ namespace _1RM.View.Host.ProtocolHosts
 {
     public partial class RdpWindow : HostBaseWinform
     {
-        private AxMsRdpClient9NotSafeForScriptingEx? _rdpClient;
+        private readonly AxMsRdpClient9NotSafeForScriptingEx _rdpClient;
         private readonly RDP _rdpSettings;
         private bool _flagHasConnected = false;
         /// <summary>
@@ -43,6 +43,7 @@ namespace _1RM.View.Host.ProtocolHosts
         {
             InitializeComponent();
 
+            _rdpSettings = rdp;
 
             _loginResizeTimer = new Timer(300) { Enabled = false, AutoReset = false };
             _loginResizeTimer.Elapsed += (sender, args) =>
@@ -78,6 +79,50 @@ namespace _1RM.View.Host.ProtocolHosts
             };
 
             GlobalEventHelper.OnScreenResolutionChanged += OnScreenResolutionChanged;
+
+            _rdpClient = new AxMsRdpClient9NotSafeForScriptingEx();
+            SimpleLogHelper.Debug("RDP Host: init new AxMsRdpClient9NotSafeForScriptingEx()");
+
+            ((System.ComponentModel.ISupportInitialize)(_rdpClient)).BeginInit();
+            _rdpClient.Dock = DockStyle.Fill;
+            _rdpClient.Enabled = true;
+            _rdpClient.BackColor = Color.Black;
+            // set call back
+            _rdpClient.OnRequestGoFullScreen += (sender, args) =>
+            {
+                SimpleLogHelper.Debug("RDP Host:  OnRequestGoFullScreen");
+                OnGoToFullScreenRequested();
+            };
+            _rdpClient.OnRequestLeaveFullScreen += (sender, args) =>
+            {
+                SimpleLogHelper.Debug("RDP Host:  OnRequestLeaveFullScreen");
+                OnConnectionBarRestoreWindowCall();
+            };
+            _rdpClient.OnRequestContainerMinimize += (sender, args) =>
+            {
+                SimpleLogHelper.Debug("RDP Host:  OnRequestContainerMinimize");
+                if (ParentWindow is FullScreenWindowView)
+                {
+                    ParentWindow.WindowState = System.Windows.WindowState.Minimized;
+                }
+            };
+            _rdpClient.OnDisconnected += OnRdpClientDisconnected;
+            _rdpClient.OnConfirmClose += (sender, args) =>
+            {
+                // invoke in the full screen mode.
+                SimpleLogHelper.Debug("RDP Host:  RdpOnConfirmClose");
+                base.OnClosed?.Invoke(base.ConnectionId);
+            };
+            _rdpClient.OnConnected += OnRdpClientConnected;
+            _rdpClient.OnLoginComplete += OnRdpClientLoginComplete;
+            ((System.ComponentModel.ISupportInitialize)(_rdpClient)).EndInit();
+
+
+            SimpleLogHelper.Debug("RDP Host: init CreateControl();");
+            _rdpClient.CreateControl();
+            this.Controls.Add(_rdpClient);
+
+            InitRdp(width, height);
         }
 
         private void OnScreenResolutionChanged()
@@ -117,8 +162,9 @@ namespace _1RM.View.Host.ProtocolHosts
                 {
                     try
                     {
-                        _rdpClient?.Dispose();
-                        _rdpClient = null;
+                        _rdpClient.Disconnect();
+                        //_rdpClient?.Dispose();
+                        //_rdpClient = null;
                     }
                     catch (Exception e)
                     {
@@ -194,54 +240,50 @@ namespace _1RM.View.Host.ProtocolHosts
             _rdpClient.AdvancedSettings7.ConnectToAdministerServer = _rdpSettings.IsAdministrativePurposes == true;
         }
 
-        private void CreateRdpClient()
-        {
-            lock (this)
-            {
-                _rdpClient = new AxMsRdpClient9NotSafeForScriptingEx();
-
-                SimpleLogHelper.Debug("RDP Host: init new AxMsRdpClient9NotSafeForScriptingEx()");
-
-                ((System.ComponentModel.ISupportInitialize)(_rdpClient)).BeginInit();
-                _rdpClient.Dock = DockStyle.Fill;
-                _rdpClient.Enabled = true;
-                _rdpClient.BackColor = Color.Black;
-                // set call back
-                _rdpClient.OnRequestGoFullScreen += (sender, args) =>
-                {
-                    SimpleLogHelper.Debug("RDP Host:  OnRequestGoFullScreen");
-                    OnGoToFullScreenRequested();
-                };
-                _rdpClient.OnRequestLeaveFullScreen += (sender, args) =>
-                {
-                    SimpleLogHelper.Debug("RDP Host:  OnRequestLeaveFullScreen");
-                    OnConnectionBarRestoreWindowCall();
-                };
-                _rdpClient.OnRequestContainerMinimize += (sender, args) =>
-                {
-                    SimpleLogHelper.Debug("RDP Host:  OnRequestContainerMinimize");
-                    if (ParentWindow is FullScreenWindowView)
-                    {
-                        ParentWindow.WindowState = System.Windows.WindowState.Minimized;
-                    }
-                };
-                _rdpClient.OnDisconnected += OnRdpClientDisconnected;
-                _rdpClient.OnConfirmClose += (sender, args) =>
-                {
-                    // invoke in the full screen mode.
-                    SimpleLogHelper.Debug("RDP Host:  RdpOnConfirmClose");
-                    base.OnClosed?.Invoke(base.ConnectionId);
-                };
-                _rdpClient.OnConnected += OnRdpClientConnected;
-                _rdpClient.OnLoginComplete += OnRdpClientLoginComplete;
-                ((System.ComponentModel.ISupportInitialize)(_rdpClient)).EndInit();
-                
-
-                SimpleLogHelper.Debug("RDP Host: init CreateControl();");
-                _rdpClient.CreateControl();
-                this.Controls.Add(_rdpClient);
-            }
-        }
+        //private void CreateRdpClient()
+        //{
+        //    lock (this)
+        //    {
+        //        _rdpClient = new AxMsRdpClient9NotSafeForScriptingEx();
+        //        SimpleLogHelper.Debug("RDP Host: init new AxMsRdpClient9NotSafeForScriptingEx()");
+        //        ((System.ComponentModel.ISupportInitialize)(_rdpClient)).BeginInit();
+        //        _rdpClient.Dock = DockStyle.Fill;
+        //        _rdpClient.Enabled = true;
+        //        _rdpClient.BackColor = Color.Black;
+        //        // set call back
+        //        _rdpClient.OnRequestGoFullScreen += (sender, args) =>
+        //        {
+        //            SimpleLogHelper.Debug("RDP Host:  OnRequestGoFullScreen");
+        //            OnGoToFullScreenRequested();
+        //        };
+        //        _rdpClient.OnRequestLeaveFullScreen += (sender, args) =>
+        //        {
+        //            SimpleLogHelper.Debug("RDP Host:  OnRequestLeaveFullScreen");
+        //            OnConnectionBarRestoreWindowCall();
+        //        };
+        //        _rdpClient.OnRequestContainerMinimize += (sender, args) =>
+        //        {
+        //            SimpleLogHelper.Debug("RDP Host:  OnRequestContainerMinimize");
+        //            if (ParentWindow is FullScreenWindowView)
+        //            {
+        //                ParentWindow.WindowState = System.Windows.WindowState.Minimized;
+        //            }
+        //        };
+        //        _rdpClient.OnDisconnected += OnRdpClientDisconnected;
+        //        _rdpClient.OnConfirmClose += (sender, args) =>
+        //        {
+        //            // invoke in the full screen mode.
+        //            SimpleLogHelper.Debug("RDP Host:  RdpOnConfirmClose");
+        //            base.OnClosed?.Invoke(base.ConnectionId);
+        //        };
+        //        _rdpClient.OnConnected += OnRdpClientConnected;
+        //        _rdpClient.OnLoginComplete += OnRdpClientLoginComplete;
+        //        ((System.ComponentModel.ISupportInitialize)(_rdpClient)).EndInit();
+        //        SimpleLogHelper.Debug("RDP Host: init CreateControl();");
+        //        _rdpClient.CreateControl();
+        //        this.Controls.Add(_rdpClient);
+        //    }
+        //}
 
         private void RdpInitConnBar()
         {
@@ -691,7 +733,7 @@ namespace _1RM.View.Host.ProtocolHosts
             {
                 Status = ProtocolHostStatus.Initializing;
                 RdpClientDispose();
-                CreateRdpClient();
+                //CreateRdpClient();
                 RdpInitServerInfo();
                 RdpInitStatic();
                 RdpInitConnBar();
@@ -1179,6 +1221,7 @@ namespace _1RM.View.Host.ProtocolHosts
                     //GridMessageBox.Visibility = Visibility.Visible;
                     //TbMessageTitle.Visibility = Visibility.Collapsed;
                     //TbMessage.Text = e.Message;
+                    SimpleLogHelper.Error(e);
                 }
                 Status = ProtocolHostStatus.Connected;
             });
