@@ -232,7 +232,7 @@ namespace _1RM.Service
 
                     SimpleLogHelper.Debug($@"MarkProtocolHostToClose: marking to close: {host.GetType().Name}(id = {connectionId}, hash = {host.GetHashCode()})");
 
-                    host.OnClosed -= OnRequestCloseConnection;
+                    host.OnRdpClosed -= OnRequestCloseConnection;
                     host.OnFullScreen2Window -= this.MoveSessionToTabWindow;
                     _hostToBeDispose.Enqueue(host);
                     host.ProtocolServer.RunScriptAfterDisconnected();
@@ -306,7 +306,7 @@ namespace _1RM.Service
                     if (unhandledFlag && _connectionId2Hosts.TryRemove(id, out var host))
                     {
                         SimpleLogHelper.Warning($@"MarkUnhandledProtocolToClose: marking to close: {host.GetType().Name}(id = {id}, hash = {host.GetHashCode()})");
-                        host.OnClosed -= OnRequestCloseConnection;
+                        host.OnRdpClosed -= OnRequestCloseConnection;
                         host.OnFullScreen2Window -= this.MoveSessionToTabWindow;
                         _hostToBeDispose.Enqueue(host);
                         host.ProtocolServer.RunScriptAfterDisconnected();
@@ -324,7 +324,7 @@ namespace _1RM.Service
             while (_hostToBeDispose.TryDequeue(out var host))
             {
                 PrintCacheCount();
-                host.OnClosed -= OnRequestCloseConnection;
+                host.OnRdpClosed -= OnRequestCloseConnection;
                 host.OnFullScreen2Window -= this.MoveSessionToTabWindow;
                 // Dispose
                 try

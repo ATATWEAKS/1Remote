@@ -255,7 +255,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 {
                     // invoke in the full screen mode.
                     SimpleLogHelper.Debug("RDP Host:  RdpOnConfirmClose");
-                    base.OnClosed?.Invoke(base.ConnectionId);
+                    base.OnRdpClosed?.Invoke(base.ConnectionId);
                 };
                 _rdpClient.OnConnected += OnRdpClientConnected;
                 _rdpClient.OnLoginComplete += OnRdpClientLoginComplete;

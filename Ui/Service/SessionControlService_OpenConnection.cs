@@ -137,7 +137,7 @@ namespace _1RM.Service
 
             Debug.Assert(!_connectionId2Hosts.ContainsKey(host.ConnectionId));
             _connectionId2Hosts.TryAdd(host.ConnectionId, host);
-            host.OnClosed += OnRequestCloseConnection;
+            host.OnRdpClosed += OnRequestCloseConnection;
             host.OnFullScreen2Window += this.MoveSessionToTabWindow;
             this.MoveSessionToFullScreen(host.ConnectionId);
             host.Conn();
@@ -161,7 +161,7 @@ namespace _1RM.Service
                     var host = r.GetHost(p, tab);
                     // get display area size for host
                     Debug.Assert(!_connectionId2Hosts.ContainsKey(host.ConnectionId));
-                    host.OnClosed += OnRequestCloseConnection;
+                    host.OnRdpClosed += OnRequestCloseConnection;
                     host.OnFullScreen2Window += this.MoveSessionToTabWindow;
                     tab.GetViewModel().AddItem(new TabItemViewModel(host, p.DisplayName));
                     _connectionId2Hosts.TryAdd(host.ConnectionId, host);

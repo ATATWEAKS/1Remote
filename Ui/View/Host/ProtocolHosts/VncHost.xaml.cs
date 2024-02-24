@@ -174,7 +174,7 @@ namespace _1RM.View.Host.ProtocolHosts
             BtnReconn.Visibility = Visibility.Visible;
             TbMessage.Text = "Connection lost...";
             if (_invokeOnClosedWhenDisconnected)
-                base.OnClosed?.Invoke(base.ConnectionId);
+                base.OnRdpClosed?.Invoke(base.ConnectionId);
         }
 
         #endregion connection

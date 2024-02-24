@@ -25,7 +25,7 @@ namespace _1RM.View.Host.ProtocolHosts
         private void BtnCancel_OnClick(object sender, RoutedEventArgs e)
         {
             this.Dispose();
-            base.OnClosed?.Invoke(base.ConnectionId);
+            base.OnProtocolClosed?.Invoke(base.ConnectionId);
         }
         private void BtnReconn_OnClick(object sender, RoutedEventArgs e)
         {
@@ -156,7 +156,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 else
                 {
                     RdpClientDispose();
-                    base.OnClosed?.Invoke(base.ConnectionId);
+                    base.OnProtocolClosed?.Invoke(base.ConnectionId);
                 }
             }
         }
