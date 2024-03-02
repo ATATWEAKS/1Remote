@@ -138,7 +138,12 @@ namespace _1RM.Utils
                 case RDP rdp:
                     {
                         var size = tab?.GetTabContentSize(ColorAndBrushHelper.ColorIsTransparent(protocol.ColorHex) == true);
-                        return AxMsRdpClient09Host.Create(rdp, (int)(size?.Width ?? 0), (int)(size?.Height ?? 0));
+                        var form = new RdpHostForm(rdp, (int)(size?.Width ?? 0), (int)(size?.Height ?? 0));
+                        if (tab != null)
+                            form.SetParentWindow(tab);
+                        var host = new IntegrateHostForWinFrom(rdp, form);
+                        return host;
+                        //return AxMsRdpClient09Host.Create(rdp, (int)(size?.Width ?? 0), (int)(size?.Height ?? 0));
                     }
                 case IKittyConnectable kittyConnectable:
                     {

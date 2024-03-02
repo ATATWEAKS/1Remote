@@ -105,7 +105,7 @@ namespace _1RM.View.Host.ProtocolHosts
                     if (_rdpClient?.DesktopWidth > nw
                         || _rdpClient?.DesktopHeight > nh)
                     {
-                        SimpleLogHelper.DebugInfo($@"_loginResizeTimer start run... {_rdpClient?.DesktopWidth}, {nw}, {_rdpClient?.DesktopHeight}, {nh}");
+                        SimpleLogHelper.DebugInfo($@"_loginResizeTimer start run... current w,h = {_rdpClient?.DesktopWidth}, {_rdpClient?.DesktopHeight}, new w,h = {nw}, {nh}");
                         ReSizeRdpToControlSize();
                     }
                     else
@@ -255,7 +255,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 {
                     // invoke in the full screen mode.
                     SimpleLogHelper.Debug("RDP Host:  RdpOnConfirmClose");
-                    base.OnRdpClosed?.Invoke(base.ConnectionId);
+                    base.OnProtocolClosed?.Invoke(base.ConnectionId);
                 };
                 _rdpClient.OnConnected += OnRdpClientConnected;
                 _rdpClient.OnLoginComplete += OnRdpClientLoginComplete;

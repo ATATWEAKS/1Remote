@@ -179,7 +179,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 this.Controls.Add(_maskLayer);
                 _maskLayer.BringToFront();
                 _rdpClient.Hide();
-                InitRdp(_rdpClient.Width, _rdpClient.Height);
+                InitRdp(width, height);
                 _rdpClient.Connect();
             };
 
@@ -341,7 +341,11 @@ namespace _1RM.View.Host.ProtocolHosts
             }
             base.OnFullScreen2Window?.Invoke(base.ConnectionId);
             // TODO 从 taskbar 隐藏
-            ShowInTaskbar = false;
+            // ShowInTaskbar = false;
+
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.Width = 800;
+            this.Height = 600;
 #else
             // TODO 获取 tab 的尺寸，并设置为对应尺寸
             this.FormBorderStyle = FormBorderStyle.Sizable;

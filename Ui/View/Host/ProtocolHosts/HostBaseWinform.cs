@@ -22,6 +22,8 @@ public abstract class HostBaseWinform : Form, IHostBase
     private WindowBase? _parentWindow;
     public WindowBase? ParentWindow => _parentWindow;
 
+    public bool IsLoaded { get; private set; }
+
     public virtual void SetParentWindow(WindowBase? value)
     {
         if (_parentWindow == value) return;
@@ -137,6 +139,11 @@ public abstract class HostBaseWinform : Form, IHostBase
                 Command = new RelayCommand((o) => { action.Run(); }),
             });
         }
+
+        Load += (sender, args) =>
+        {
+            IsLoaded = true;
+        };
     }
 
     public string ConnectionId

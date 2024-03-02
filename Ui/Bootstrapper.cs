@@ -4,12 +4,14 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using _1RM.Model;
+using _1RM.Model.Protocol;
 using _1RM.Service;
 using _1RM.Service.DataSource;
 using _1RM.Service.Locality;
 using _1RM.Utils;
 using _1RM.View;
 using _1RM.View.ErrorReport;
+using _1RM.View.Host.ProtocolHosts;
 using _1RM.View.Launcher;
 using _1RM.View.Settings;
 using _1RM.View.Settings.DataSource;
@@ -109,6 +111,22 @@ namespace _1RM
             // init Database here after ui init, to show alert if db connection goes wrong.
             AppInitHelper.InitOnLaunch();
             IoC.Get<TaskTrayService>().TaskTrayInit();
+
+
+            //var rdp = new RDP()
+            //{
+            //    DisplayName = "390",
+            //    Address = "172.20.65.89",
+            //    Port = "8389",
+            //    UserName = "administrator",
+            //    Password = "urit_2019",
+            //    //RdpFullScreenFlag = ERdpFullScreenFlag.EnableFullAllScreens,
+            //};
+
+            //// Application.Run(new RDPForm(rdp));
+            //var RdpFrom = new RdpHostForm(rdp);
+            ////RdpFrom.SetParentWindow(new Window());
+            //RdpFrom.Show();
         }
 
 

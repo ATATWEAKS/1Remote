@@ -309,7 +309,7 @@ namespace _1RM.View.Host.ProtocolHosts
             Status = ProtocolHostStatus.Connecting;
             Debug.Assert(ParentWindow != null);
 
-            var tsk = new Task(Start);
+            var tsk = new Task(StartExe);
             tsk.Start();
         }
 
@@ -371,7 +371,7 @@ namespace _1RM.View.Host.ProtocolHosts
             });
         }
 
-        public void Start()
+        private void StartExe()
         {
             RunBeforeConnect?.Invoke();
             var exeFullName = ExeFullName;
