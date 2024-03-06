@@ -211,7 +211,17 @@ namespace _1RM.View.Host.ProtocolHosts
         private void OnRdpClientConnected(object sender, EventArgs e)
         {
             SimpleLogHelper.Debug("RDP Host:  RdpOnOnConnected, rdpClient.Connected = " + _rdpClient.Connected);
-            this.ParentWindow?.FlashIfNotActive();
+            if (!this.Handle.IsActivated())
+            {
+                if (AttachedHost != null)
+                {
+                    AttachedHost.ParentWindow?.FlashIfNotActive();
+                }
+                else
+                {
+                    this.Handle.Flash();
+                }
+            }
 
 
             _lastLoginTime = DateTime.Now;
@@ -221,7 +231,7 @@ namespace _1RM.View.Host.ProtocolHosts
             {
                 _rdpClient.Show();
                 _maskLayer.Hide();
-                if (ParentWindow == null)
+                if (AttachedHost == null)
                 {
                     SimpleLogHelper.Debug("RDP Host: ReConn with full screen");
                     GoFullScreen();
@@ -236,7 +246,7 @@ namespace _1RM.View.Host.ProtocolHosts
             ReSizeRdpToControlSize();
         }
 
-        protected void GoFullScreen()
+        public override void GoFullScreen()
         {
             if (_rdpSettings.RdpFullScreenFlag == ERdpFullScreenFlag.Disable
                 || _rdpClient.FullScreen == true)
@@ -257,7 +267,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 var flagHasConnected = this._flagHasConnected;
                 _flagHasConnected = false;
 
-                Status = ProtocolHostStatus.Disconnected;
+                SetStatus(ProtocolHostStatus.Disconnected);
                 ParentWindowResize_StopWatch();
 
                 const int UI_ERR_NORMAL_DISCONNECT = 0xb08;
@@ -313,13 +323,17 @@ namespace _1RM.View.Host.ProtocolHosts
                         _maskLayer.ShowMessage(reason);
                     }
 
-                    if (this.ParentWindow != null)
+
+                    if (!this.Handle.IsActivated())
                     {
-                        this.ParentWindow?.FlashIfNotActive();
-                    }
-                    else
-                    {
-                        WindowExtensions.Flash(this.Handle);
+                        if (AttachedHost != null)
+                        {
+                            AttachedHost.ParentWindow?.FlashIfNotActive();
+                        }
+                        else
+                        {
+                            this.Handle.Flash();
+                        }
                     }
                 }
                 else
@@ -359,18 +373,18 @@ namespace _1RM.View.Host.ProtocolHosts
 
         private void OnGoToFullScreenRequested()
         {
-#if !DEV_RDP
-            if (ParentWindow is TabWindowView)
-            {
-                // full-all-screen session switch to TabWindow, and click "Reconn" button, will entry this case.
-                _rdpClient!.FullScreen = false;
-                if (_rdpSettings.IsTmpSession() == false)
-                {
-                    LocalityConnectRecorder.RdpCacheUpdate(_rdpSettings.Id, false);
-                }
-                return;
-            }
-#endif
+//#if !DEV_RDP
+//            if (ParentWindow is TabWindowView)
+//            {
+//                // full-all-screen session switch to TabWindow, and click "Reconn" button, will entry this case.
+//                _rdpClient.FullScreen = false;
+//                if (_rdpSettings.IsTmpSession() == false)
+//                {
+//                    LocalityConnectRecorder.RdpCacheUpdate(_rdpSettings.Id, false);
+//                }
+//                return;
+//            }
+//#endif
 
 
             var screenSize = this.GetScreenSizeIfRdpIsFullScreen();
@@ -452,12 +466,12 @@ namespace _1RM.View.Host.ProtocolHosts
             {
                 try
                 {
-                    if (Status == ProtocolHostStatus.Connected || Status == ProtocolHostStatus.Connecting)
+                    if (GetStatus() == ProtocolHostStatus.Connected || GetStatus() == ProtocolHostStatus.Connecting)
                     {
                         return;
                     }
 
-                    Status = ProtocolHostStatus.Connecting;
+                    SetStatus(ProtocolHostStatus.Connecting);
                     //GridLoading.Visibility = Visibility.Visible;
                     //RdpHost.Visibility = Visibility.Collapsed;
                     _rdpClient.Connect();
@@ -468,7 +482,7 @@ namespace _1RM.View.Host.ProtocolHosts
                     //TbMessageTitle.Visibility = Visibility.Collapsed;
                     //TbMessage.Text = e.Message;
                 }
-                Status = ProtocolHostStatus.Connected;
+                SetStatus(ProtocolHostStatus.Connected);
             });
         }
 
@@ -478,24 +492,24 @@ namespace _1RM.View.Host.ProtocolHosts
             {
                 return;
             }
-            if (Status != ProtocolHostStatus.Connected
-                && Status != ProtocolHostStatus.Disconnected)
+            if (GetStatus() != ProtocolHostStatus.Connected
+                && GetStatus() != ProtocolHostStatus.Disconnected)
             {
-                SimpleLogHelper.Warning($"RDP Host: Call ReConn, but current status = " + Status);
+                SimpleLogHelper.Warning($"RDP Host: Call ReConn, but current status = " + GetStatus());
                 return;
             }
             else
             {
                 SimpleLogHelper.Warning($"RDP Host: Call ReConn");
             }
-            Status = ProtocolHostStatus.WaitingForReconnect;
+            SetStatus(ProtocolHostStatus.WaitingForReconnect);
 
-            Status = ProtocolHostStatus.NotInit;
+            SetStatus(ProtocolHostStatus.NotInit);
 
             int w = 0;
             int h = 0;
 #if !DEV_RDP
-            if (ParentWindow is TabWindowView tab)
+            if (AttachedHost.ParentWindow is TabWindowView tab)
             {
                 var size = tab.GetTabContentSize(ColorAndBrushHelper.ColorIsTransparent(this._rdpSettings.ColorHex) == true);
                 w = (int)size.Width;
@@ -505,6 +519,8 @@ namespace _1RM.View.Host.ProtocolHosts
             RdpInitDisplay(w, h, true);
             Conn();
         }
+
+
 
 #if DEV_RDP
         public bool RdpFull

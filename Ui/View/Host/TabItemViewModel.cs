@@ -1,8 +1,5 @@
-﻿using System;
-using System.Diagnostics;
-using _1RM.View.Host.ProtocolHosts;
+﻿using _1RM.View.Host.ProtocolHosts;
 using Shawn.Utils;
-using Shawn.Utils.Interface;
 using Shawn.Utils.Wpf;
 
 namespace _1RM.View.Host

@@ -5,12 +5,14 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Forms;
 using System.Windows.Interop;
+using System.Windows.Navigation;
 using _1RM.Model;
 using _1RM.Model.Protocol.Base;
 using _1RM.View.Settings;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.WpfResources.Theme.Styles;
+using Stylet;
 using Binding = System.Windows.Data.Binding;
 using CheckBox = System.Windows.Controls.CheckBox;
 
@@ -18,11 +20,24 @@ namespace _1RM.View.Host.ProtocolHosts;
 
 public abstract class HostBaseWinform : Form, IHostBase
 {
+    public bool IsClosing { get; private set; } = false;
+    public bool IsClosed { get; private set; } = false;
+
     public ProtocolBase ProtocolServer { get; }
+    public virtual ProtocolBase GetProtocolServer()
+    {
+        return ProtocolServer;
+    }
+
     private WindowBase? _parentWindow;
+    [Obsolete]
     public WindowBase? ParentWindow => _parentWindow;
+    public IntPtr HWND { get; private set; }
 
     public bool IsLoaded { get; private set; }
+
+    public string LastTabToken { get; set; } = "";
+
 
     public virtual void SetParentWindow(WindowBase? value)
     {
@@ -41,20 +56,24 @@ public abstract class HostBaseWinform : Form, IHostBase
 
     public IntPtr ParentWindowHandle { get; private set; } = IntPtr.Zero;
 
+
+
     private ProtocolHostStatus _status = ProtocolHostStatus.NotInit;
-    public ProtocolHostStatus Status
+    public virtual ProtocolHostStatus GetStatus()
     {
-        get => _status;
-        protected set
+        return _status;
+    }
+    public virtual void SetStatus(ProtocolHostStatus value)
+    {
+        if (_status != value)
         {
-            if (_status != value)
-            {
-                SimpleLogHelper.Debug(this.GetType().Name + ": Status => " + value);
-                _status = value;
-                OnCanResizeNowChanged?.Invoke();
-            }
+            SimpleLogHelper.Debug(this.GetType().Name + ": Status => " + value);
+            _status = value;
+            OnCanResizeNowChanged?.Invoke();
         }
     }
+
+
 
     protected HostBaseWinform(ProtocolBase protocolServer, bool canFullScreen = false)
     {
@@ -122,6 +141,13 @@ public abstract class HostBaseWinform : Form, IHostBase
                 Header = cb,
                 Command = new RelayCommand((_) => { SettingsPage.TabHeaderShowCloseButton = !SettingsPage.TabHeaderShowCloseButton; }),
             });
+
+            Closing += (sender, args) => IsClosing = true;
+            Closed += (sender, args) =>
+            {
+                IsClosing = true;
+                IsClosed = true;
+            };
         }
 
         //MenuItems.Add(new RibbonApplicationSplitMenuItem());
@@ -143,6 +169,7 @@ public abstract class HostBaseWinform : Form, IHostBase
         Load += (sender, args) =>
         {
             IsLoaded = true;
+            HWND = this.Handle;
         };
     }
 
@@ -199,15 +226,12 @@ public abstract class HostBaseWinform : Form, IHostBase
     /// <summary>
     /// disconnect the session and close host window
     /// </summary>
-    public virtual void Close()
+    public new virtual void Close()
     {
         this.OnProtocolClosed?.Invoke(ConnectionId);
     }
 
-    public virtual void GoFullScreen()
-    {
-        throw new NotSupportedException();
-    }
+    public abstract void GoFullScreen();
 
     /// <summary>
     /// call to focus the AxRdp or putty
@@ -225,9 +249,37 @@ public abstract class HostBaseWinform : Form, IHostBase
     /// <returns></returns>
     public virtual IntPtr GetHostHwnd()
     {
-        return this.Handle;
+        if (this.HWND == IntPtr.Zero)
+        {
+            Execute.OnUIThreadSync(() =>
+            {
+                HWND = this.Handle;
+            });
+        }
+        return this.HWND;
     }
 
     public Action<string>? OnProtocolClosed { get; set; } = null;
     public Action<string>? OnFullScreen2Window { get; set; } = null;
+
+    /// <summary>
+    /// 为了在 tab 中显示，必须把这个 winfrom 窗口托管到 IntegrateHostForWinFrom
+    /// </summary>
+    public IntegrateHostForWinFrom? AttachedHost { get; private set; }= null;
+    public IntegrateHostForWinFrom AttachToHostBase()
+    {
+        AttachedHost ??= new IntegrateHostForWinFrom(this);
+        return AttachedHost;
+    }
+
+
+    public void DetachFromHostBase()
+    {
+        if(AttachedHost == null)
+            return;
+
+        AttachedHost.Dispose();
+        AttachedHost = null;
+    }
+
 }

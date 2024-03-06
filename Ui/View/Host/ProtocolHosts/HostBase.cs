@@ -1,30 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Ribbon;
 using System.Windows.Data;
 using System.Windows.Interop;
 using _1RM.Model;
-using _1RM.Model.Protocol;
 using _1RM.Model.Protocol.Base;
-using _1RM.Service;
 using _1RM.View.Settings;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.WpfResources.Theme.Styles;
-using Stylet;
 using Binding = System.Windows.Data.Binding;
 using CheckBox = System.Windows.Controls.CheckBox;
 using UserControl = System.Windows.Controls.UserControl;
 
 namespace _1RM.View.Host.ProtocolHosts
 {
+    // TODO rename to HostBaseUserControl
     public abstract class HostBase : UserControl, IHostBase
     {
         public ProtocolBase ProtocolServer { get; }
+
+        public virtual ProtocolBase GetProtocolServer()
+        {
+            return ProtocolServer;
+        }
+
         private WindowBase? _parentWindow;
+        [Obsolete]
         public WindowBase? ParentWindow => _parentWindow;
 
         public virtual void SetParentWindow(WindowBase? value)
@@ -44,20 +47,22 @@ namespace _1RM.View.Host.ProtocolHosts
 
         public IntPtr ParentWindowHandle { get; private set; } = IntPtr.Zero;
 
+
         private ProtocolHostStatus _status = ProtocolHostStatus.NotInit;
-        public ProtocolHostStatus Status
+        public virtual ProtocolHostStatus GetStatus()
         {
-            get => _status;
-            protected set
+            return _status;
+        }
+        public virtual void SetStatus(ProtocolHostStatus value)
+        {
+            if (_status != value)
             {
-                if (_status != value)
-                {
-                    SimpleLogHelper.Debug(this.GetType().Name + ": Status => " + value);
-                    _status = value;
-                    OnCanResizeNowChanged?.Invoke();
-                }
+                SimpleLogHelper.Debug(this.GetType().Name + ": Status => " + value);
+                _status = value;
+                OnCanResizeNowChanged?.Invoke();
             }
         }
+
 
         protected HostBase(ProtocolBase protocolServer, bool canFullScreen = false)
         {

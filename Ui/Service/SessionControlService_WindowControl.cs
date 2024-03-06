@@ -42,44 +42,30 @@ namespace _1RM.Service
             }
         }
 
-        private FullScreenWindowView MoveToExistedFullScreenWindow(HostBase host, TabWindowView? fromTab)
-        {
-            // restore from tab to full
-            var full = _connectionId2FullScreenWindows[host.ConnectionId];
-            full.LastTabToken = "";
-            // full screen placement
-            if (fromTab != null)
-            {
-                var screenEx = ScreenInfoEx.GetCurrentScreen(fromTab);
-                full.Top = screenEx.VirtualWorkingAreaCenter.Y - full.Height / 2;
-                full.Left = screenEx.VirtualWorkingAreaCenter.X - full.Width / 2;
-                full.LastTabToken = _lastTabToken;
-            }
-            full.ShowOrHide(host);
-            return full;
-        }
-
-        private FullScreenWindowView MoveToNewFullScreenWindow(HostBase host, TabWindowView? fromTab)
-        {
-            // first time to full
-            var full = FullScreenWindowView.Create(fromTab?.Token ?? "", host, fromTab);
-            full.ShowOrHide(host);
-            _connectionId2FullScreenWindows.TryAdd(host.ConnectionId, full);
-            return full;
-        }
-
 
         public void MoveSessionToFullScreen(string connectionId)
         {
-            if (!_connectionId2Hosts.ContainsKey(connectionId))
+            HostBaseWinform? host = null;
+            if (_connectionId2WinFormHosts.ContainsKey(connectionId))
+            {
+                host = _connectionId2WinFormHosts[connectionId];
+            }
+            else if (_connectionId2TabHosts.ContainsKey(connectionId)
+                     && _connectionId2TabHosts[connectionId] is IntegrateHostForWinFrom { Form: HostBaseWinform hbw })
+            {
+                _connectionId2WinFormHosts.TryAdd(connectionId, hbw);
+                host = hbw;
+            }
+            else
                 throw new NullReferenceException($"can not find host by connectionId = `{connectionId}`");
 
-            var host = _connectionId2Hosts[connectionId];
+            host.GoFullScreen();
 
-            // remove from old parent
+            // remove from tab
             var tab = GetTabByConnectionId(connectionId);
             if (tab != null)
             {
+                host.LastTabToken = tab.Token;
                 // if tab is not loaded, do not allow move to full-screen, 防止 loaded 事件中的逻辑覆盖
                 if (tab.IsLoaded == false)
                     return;
@@ -87,62 +73,34 @@ namespace _1RM.Service
                 tab.GetViewModel().TryRemoveItem(connectionId);
                 SimpleLogHelper.Debug($@"MoveSessionToFullScreen: remove connectionId = {connectionId} from tab({tab.GetHashCode()}) ");
             }
+            _connectionId2TabHosts.TryRemove(connectionId, out _);
 
-            // move to full-screen-window
-            var full = _connectionId2FullScreenWindows.ContainsKey(connectionId) ?
-                this.MoveToExistedFullScreenWindow(host, tab) :
-                this.MoveToNewFullScreenWindow(host, tab);
+
 
             this.CleanupProtocolsAndWindows();
-
-            SimpleLogHelper.Debug($@"Move host({host.GetHashCode()}) to full({full.GetHashCode()})");
             PrintCacheCount();
         }
 
+
+
         public void MoveSessionToTabWindow(string connectionId)
         {
-            Debug.Assert(_connectionId2Hosts.ContainsKey(connectionId) == true);
-            var host = _connectionId2Hosts[connectionId];
+            Debug.Assert(_connectionId2WinFormHosts.ContainsKey(connectionId) == true);
+            var host = _connectionId2WinFormHosts[connectionId];
+
             SimpleLogHelper.Debug($@"MoveSessionToTabWindow: Moving host({host.GetHashCode()}) to any tab");
             // get tab
-            TabWindowView? tab;
-
-            lock (_dictLock)
-            {
-                // remove from old parent
-                if (host.ParentWindow is FullScreenWindowView full)
-                {
-                    if (full.IsLoaded == false)
-                    {
-                        // if FullScreenWindowView is not loaded, do not allow move to tab, 防止 loaded 事件中的逻辑覆盖
-                        return;
-                    }
-
-                    tab = this.GetOrCreateTabWindow(full.LastTabToken ?? "");
-                    if (tab.IsClosed)
-                    {
-                        tab = this.GetOrCreateTabWindow();
-                    }
-
-                    SimpleLogHelper.Debug($@"Hide full({full.GetHashCode()})");
-                    // !importance: do not close old FullScreenWindowView, or RDP will lose conn bar when restore from tab to fullscreen.
-                    full.ShowOrHide(null);
-                }
-                else
-                    tab = this.GetOrCreateTabWindow();
-            }
-
+            TabWindowView tab = GetOrCreateTabWindow(host.LastTabToken);
 
             // assign host to tab
-            if (tab.GetViewModel().Items.All(x => x.Content != host))
+            if (tab.GetViewModel().Items.All(x => x.Content.ConnectionId != connectionId))
             {
-                // move
-                tab.GetViewModel().AddItem(new TabItemViewModel(host, host.ProtocolServer.DisplayName));
+                tab.GetViewModel().AddItem(new TabItemViewModel(host.AttachToHostBase(), host.ProtocolServer.DisplayName));
             }
             else
             {
                 // just show
-                tab.GetViewModel().SelectedItem = tab.GetViewModel().Items.First(x => x.Content == host);
+                tab.GetViewModel().SelectedItem = tab.GetViewModel().Items.First(x => x.Content.ConnectionId != connectionId);
             }
             tab.Activate();
             SimpleLogHelper.Debug($@"MoveSessionToTabWindow: Moved host({host.GetHashCode()}) to tab({tab.GetHashCode()})");

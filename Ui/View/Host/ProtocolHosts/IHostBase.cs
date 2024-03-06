@@ -8,12 +8,14 @@ namespace _1RM.View.Host.ProtocolHosts;
 public interface IHostBase
 {
     public ProtocolBase ProtocolServer { get; }
+    public ProtocolBase GetProtocolServer();
     public WindowBase? ParentWindow { get; }
     public void SetParentWindow(WindowBase? value);
 
     public IntPtr ParentWindowHandle { get; }
 
-    public ProtocolHostStatus Status { get; }
+    public ProtocolHostStatus GetStatus();
+    public void SetStatus(ProtocolHostStatus value);
 
     public string ConnectionId { get; }
 

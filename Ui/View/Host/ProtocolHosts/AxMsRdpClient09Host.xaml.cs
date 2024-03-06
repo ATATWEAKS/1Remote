@@ -689,11 +689,11 @@ namespace _1RM.View.Host.ProtocolHosts
 
         private void InitRdp(int width = 0, int height = 0, bool isReconnecting = false)
         {
-            if (Status != ProtocolHostStatus.NotInit)
+            if (GetStatus() != ProtocolHostStatus.NotInit)
                 return;
             try
             {
-                Status = ProtocolHostStatus.Initializing;
+                SetStatus(ProtocolHostStatus.Initializing);
                 RdpClientDispose();
                 CreateRdpClient();
                 RdpInitServerInfo();
@@ -703,7 +703,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 RdpInitDisplay(width, height, isReconnecting);
                 RdpInitPerformance();
                 RdpInitGateway();
-                Status = ProtocolHostStatus.Initialized;
+                SetStatus(ProtocolHostStatus.Initialized);
             }
             catch (Exception e)
             {
@@ -711,7 +711,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 TbMessageTitle.Visibility = Visibility.Collapsed;
                 TbMessage.Text = e.Message;
 
-                Status = ProtocolHostStatus.NotInit;
+                SetStatus(ProtocolHostStatus.NotInit);
             }
         }
 
@@ -723,12 +723,12 @@ namespace _1RM.View.Host.ProtocolHosts
             {
                 try
                 {
-                    if (Status == ProtocolHostStatus.Connected || Status == ProtocolHostStatus.Connecting)
+                    if (GetStatus() == ProtocolHostStatus.Connected || GetStatus() == ProtocolHostStatus.Connecting)
                     {
                         return;
                     }
 
-                    Status = ProtocolHostStatus.Connecting;
+                    SetStatus(ProtocolHostStatus.Connecting);
                     GridLoading.Visibility = Visibility.Visible;
                     RdpHost.Visibility = Visibility.Collapsed;
                     _rdpClient.Connect();
@@ -739,7 +739,7 @@ namespace _1RM.View.Host.ProtocolHosts
                     TbMessageTitle.Visibility = Visibility.Collapsed;
                     TbMessage.Text = e.Message;
                 }
-                Status = ProtocolHostStatus.Connected;
+                SetStatus(ProtocolHostStatus.Connected);
             });
         }
 
@@ -773,7 +773,7 @@ namespace _1RM.View.Host.ProtocolHosts
 
         public override bool CanResizeNow()
         {
-            return Status == ProtocolHostStatus.Connected;
+            return GetStatus() == ProtocolHostStatus.Connected;
         }
 
         #endregion Base Interface

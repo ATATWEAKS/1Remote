@@ -17,11 +17,11 @@ namespace _1RM.View.Host.ProtocolHosts
     {
         private void InitRdp(int width = 0, int height = 0, bool isReconnecting = false)
         {
-            if (Status != ProtocolHostStatus.NotInit)
+            if (GetStatus() != ProtocolHostStatus.NotInit)
                 return;
             try
             {
-                Status = ProtocolHostStatus.Initializing;
+                SetStatus(ProtocolHostStatus.Initializing);
                 //RdpClientDispose();
                 //CreateRdpClient();
                 RdpInitServerInfo();
@@ -31,14 +31,14 @@ namespace _1RM.View.Host.ProtocolHosts
                 RdpInitDisplay(width, height, isReconnecting);
                 RdpInitPerformance();
                 RdpInitGateway();
-                Status = ProtocolHostStatus.Initialized;
+                SetStatus(ProtocolHostStatus.Initialized);
             }
             catch (Exception e)
             {
                 //GridMessageBox.Visibility = Visibility.Visible;
                 //TbMessageTitle.Visibility = Visibility.Collapsed;
                 //TbMessage.Text = e.Message;
-                Status = ProtocolHostStatus.NotInit;
+                SetStatus(ProtocolHostStatus.NotInit);
             }
         }
         
@@ -430,7 +430,7 @@ namespace _1RM.View.Host.ProtocolHosts
                         if (height < 100)
                             height = 600;
 
-                        if (ParentWindow == null)
+                        if (AttachedHost == null)
                         {
                             var size = GetScreenSizeIfRdpIsFullScreen();
                             _rdpClient.DesktopWidth = size.Width;

@@ -1,14 +1,8 @@
-﻿using System;
-using System.Diagnostics;
-using System.Windows;
-using System.Windows.Interop;
-using _1RM.Model;
+﻿using System.Windows;
 using _1RM.Model.Protocol;
 using _1RM.Service;
 using _1RM.Service.Locality;
 using _1RM.View.Host.ProtocolHosts;
-using Shawn.Utils;
-using Shawn.Utils.Interface;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.WpfResources.Theme.Styles;
 using Stylet;

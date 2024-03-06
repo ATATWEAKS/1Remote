@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -12,6 +13,7 @@ using _1RM.Model.ProtocolRunner.Default;
 using _1RM.Service.Locality;
 using _1RM.Utils;
 using _1RM.View.Host;
+using _1RM.View.Host.ProtocolHosts;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
 using Stylet;
@@ -132,14 +134,21 @@ namespace _1RM.Service
         {
             // fullscreen normally
             var host = runner.GetHost(server);
-            if (host == null)
+            if (host is not HostBaseWinform hbw || hbw.CanFullScreen == false)
+            {
+                ProtocolBase s = server;
+                Runner r = runner;
+                ConnectWithTab(s, r, "");
                 return;
+            }
 
-            Debug.Assert(!_connectionId2Hosts.ContainsKey(host.ConnectionId));
-            _connectionId2Hosts.TryAdd(host.ConnectionId, host);
+            Debug.Assert(!_connectionId2WinFormHosts.ContainsKey(host.ConnectionId));
+
             host.OnProtocolClosed += OnRequestCloseConnection;
             host.OnFullScreen2Window += this.MoveSessionToTabWindow;
             this.MoveSessionToFullScreen(host.ConnectionId);
+
+            _connectionId2WinFormHosts.TryAdd(host.ConnectionId, hbw);
             host.Conn();
             SimpleLogHelper.Debug($@"Start Conn: {server.DisplayName}({server.GetHashCode()}) by host({host.GetHashCode()}) with full");
         }
@@ -159,32 +168,33 @@ namespace _1RM.Service
                     tab.Show();
 
                     var host = r.GetHost(p, tab);
-                    // get display area size for host
-                    Debug.Assert(!_connectionId2Hosts.ContainsKey(host.ConnectionId));
-                    host.OnProtocolClosed += OnRequestCloseConnection;
-                    host.OnFullScreen2Window += this.MoveSessionToTabWindow;
-                    tab.GetViewModel().AddItem(new TabItemViewModel(host, p.DisplayName));
-                    _connectionId2Hosts.TryAdd(host.ConnectionId, host);
-                    host.Conn();
-                    tab.WindowState = tab.WindowState == WindowState.Minimized ? WindowState.Normal : tab.WindowState;
-                    tab.Activate();
+                    if (host is HostBase hb)
+                    {
+                        // get display area size for host
+                        Debug.Assert(!_connectionId2TabHosts.ContainsKey(host.ConnectionId));
+                        host.OnProtocolClosed += OnRequestCloseConnection;
+                        host.OnFullScreen2Window += this.MoveSessionToTabWindow;
+                        tab.GetViewModel().AddItem(new TabItemViewModel(hb, p.DisplayName));
+                        _connectionId2TabHosts.TryAdd(host.ConnectionId, hb);
+                        host.Conn();
+                        tab.WindowState = tab.WindowState == WindowState.Minimized ? WindowState.Normal : tab.WindowState;
+                        tab.Activate();
+                    }
                 }
             });
             return tab?.Token ?? "";
         }
         #endregion
 
-        private async Task<string> Connect(ProtocolBase protocol, string fromView, string assignTabToken = "", string assignRunnerName = "", string assignCredentialName = "")
+        private async Task Connect(ProtocolBase protocol, string fromView, string assignTabToken = "", string assignRunnerName = "", string assignCredentialName = "")
         {
-            string tabToken = "";
-
             // if is OnlyOneInstance server and it is connected now, activate it and return.
             {
                 Credential? assignCredential = null;
                 if (!string.IsNullOrEmpty(assignCredentialName) && protocol is ProtocolBaseWithAddressPort p)
                     assignCredential = p.AlternateCredentials.FirstOrDefault(x => x.Name == assignCredentialName);
                 if (this.ActivateOrReConnIfServerSessionIsOpened(protocol, assignCredential))
-                    return tabToken;
+                    return;
             }
 
             #region prepare
@@ -218,7 +228,7 @@ namespace _1RM.Service
                     var c = await GetCredential(p, assignCredentialName);
                     if (c == null)
                     {
-                        return tabToken;
+                        return;
                     }
 
                     p.SetCredential(c);
@@ -233,7 +243,7 @@ namespace _1RM.Service
                 if (0 != code)
                 {
                     MessageBoxHelper.ErrorAlert($"Script ExitCode = {code}, connection abort!");
-                    return tabToken;
+                    return;
                 }
             }
 
@@ -241,20 +251,20 @@ namespace _1RM.Service
             if (protocolClone is RdpApp rdpApp)
             {
                 ConnectRemoteApp(rdpApp);
-                return tabToken;
+                return;
             }
             else if (protocolClone is RDP rdp)
             {
                 if (rdp.IsNeedRunWithMstsc())
                 {
                     ConnectRdpByMstsc(rdp);
-                    return tabToken;
+                    return;
                 }
                 // rdp full screen
                 if (protocolClone.IsThisTimeConnWithFullScreen())
                 {
                     this.ConnectWithFullScreen(protocolClone, new InternalDefaultRunner(RDP.ProtocolName));
-                    return tabToken;
+                    return;
                 }
             }
             else if (protocolClone is SSH { OpenSftpOnConnected: true } ssh)
@@ -282,8 +292,9 @@ namespace _1RM.Service
                     var process = Process.Start(tmp.Item2, localApp.GetArguments(false));
                     AddUnHostingWatch(process, localApp);
                 }
-                return tabToken;
+                return;
             }
+
 
 
             var runner = ProtocolHelper.GetRunner(IoC.Get<ProtocolConfigurationService>(), protocolClone, protocolClone.Protocol, assignRunnerName)!;
@@ -293,10 +304,8 @@ namespace _1RM.Service
             }
             else
             {
-                tabToken = ConnectWithTab(protocolClone, runner, assignTabToken);
+                ConnectWithTab(protocolClone, runner, assignTabToken);
             }
-
-            return tabToken;
         }
     }
 }
