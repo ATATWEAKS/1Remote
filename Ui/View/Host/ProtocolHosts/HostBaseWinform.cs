@@ -9,8 +9,10 @@ using System.Windows.Navigation;
 using _1RM.Model;
 using _1RM.Model.Protocol.Base;
 using _1RM.View.Settings;
+using Org.BouncyCastle.Asn1.X509;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
+using Shawn.Utils.Wpf.Controls;
 using Shawn.Utils.WpfResources.Theme.Styles;
 using Stylet;
 using Binding = System.Windows.Data.Binding;
@@ -77,6 +79,7 @@ public abstract class HostBaseWinform : Form, IHostBase
 
     protected HostBaseWinform(ProtocolBase protocolServer, bool canFullScreen = false)
     {
+        FormBorderStyle = FormBorderStyle.Sizable;
         ProtocolServer = protocolServer;
         CanFullScreen = canFullScreen;
 
@@ -268,6 +271,10 @@ public abstract class HostBaseWinform : Form, IHostBase
     public IntegrateHostForWinFrom? AttachedHost { get; private set; }= null;
     public IntegrateHostForWinFrom AttachToHostBase()
     {
+        FormBorderStyle = FormBorderStyle.None;
+        WindowState = FormWindowState.Maximized;
+        ShowInTaskbar = false;
+
         AttachedHost ??= new IntegrateHostForWinFrom(this);
         return AttachedHost;
     }
@@ -277,6 +284,11 @@ public abstract class HostBaseWinform : Form, IHostBase
     {
         if(AttachedHost == null)
             return;
+
+        FormBorderStyle = FormBorderStyle.Sizable;
+        WindowState = FormWindowState.Normal;
+        ShowInTaskbar = true;
+        Handle.SetParentEx(IntPtr.Zero);
 
         AttachedHost.Dispose();
         AttachedHost = null;

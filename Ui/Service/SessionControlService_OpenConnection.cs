@@ -173,6 +173,10 @@ namespace _1RM.Service
                         // get display area size for host
                         Debug.Assert(!_connectionId2TabHosts.ContainsKey(host.ConnectionId));
                         host.OnProtocolClosed += OnRequestCloseConnection;
+                        if (host is IntegrateHostForWinFrom { Form: IHostBase h })
+                        {
+                            h.OnFullScreen2Window += this.MoveSessionToTabWindow;
+                        }
                         host.OnFullScreen2Window += this.MoveSessionToTabWindow;
                         tab.GetViewModel().AddItem(new TabItemViewModel(hb, p.DisplayName));
                         _connectionId2TabHosts.TryAdd(host.ConnectionId, hb);

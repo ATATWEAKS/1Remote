@@ -46,13 +46,23 @@ namespace _1RM.View.Host.ProtocolHosts
             _panel.SizeChanged += PanelOnSizeChanged;
             FormsHost.Child = _panel;
             _form.Closed += FormOnClosed;
-            Loaded += (sender, args) =>
+
+
+            _form.FormBorderStyle = FormBorderStyle.None;
+            _form.WindowState = FormWindowState.Maximized;
+            _form.Handle.SetParentEx(_panel.Handle);
+
+            if (form.IsLoaded)
             {
-                _form.FormBorderStyle = FormBorderStyle.None;
-                _form.WindowState = FormWindowState.Maximized;
-                _form.Handle.SetParentEx(_panel.Handle);
                 _form.Show();
-            };
+            }
+            else
+            {
+                Loaded += (sender, args) =>
+                {
+                    _form.Show();
+                };
+            }
         }
 
 

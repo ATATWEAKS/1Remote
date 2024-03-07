@@ -7,6 +7,8 @@ Set-Location $PSScriptRoot
 cd ..
 
 
+
+
 # Check if the file Ui/AppVersion.cs exists
 if (!(Test-Path -Path "Ui/AppVersion.cs" -PathType Leaf)) {
     Write-Host "Error: Ui/AppVersion.cs does not exist."

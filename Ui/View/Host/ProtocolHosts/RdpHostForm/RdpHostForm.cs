@@ -13,6 +13,7 @@ using Stylet;
 using System.Windows;
 using System.Diagnostics;
 using System.Windows.Forms.VisualStyles;
+using _1RM.Service;
 #if !DEV_RDP
 using _1RM.Model;
 using _1RM.Service.Locality;
@@ -101,11 +102,13 @@ namespace _1RM.View.Host.ProtocolHosts
                 if (m.WParam.ToInt32() == SC_MAXIMIZE1 ||
                     m.WParam.ToInt32() == SC_MAXIMIZE2)
                 {
-                    _rdpClient.FullScreen = !_rdpClient.FullScreen;
+                    GoFullScreen();
+                    //_rdpClient.FullScreen = !_rdpClient.FullScreen;
+                    //IoC.Get<SessionControlService>().MoveSessionToFullScreen(ConnectionId);
                     return;
                 }
             }
-            base.WndProc(ref m);
+            base.WndProc(ref m); // <--- TODO Cannot access a disposed object.
         }
 
 
@@ -183,17 +186,18 @@ namespace _1RM.View.Host.ProtocolHosts
                 _rdpClient.Connect();
             };
 
-            Closed += (sender, args) =>
+            Closing += (sender, args) =>
             {
+                Activated -= OnActivated;
 #if !DEV_RDP
                 GlobalEventHelper.OnScreenResolutionChanged -= OnScreenResolutionChanged;
 #endif
             };
+        }
 
-            Activated += (sender, args) =>
-            {
-                WindowExtensions.StopFlash(this.Handle);
-            };
+        private void OnActivated(object? sender, EventArgs e)
+        {
+            WindowExtensions.StopFlash(this.Handle); // <--- TODO Cannot access a disposed object.
         }
 
         private void DismissOnClick()
@@ -354,12 +358,14 @@ namespace _1RM.View.Host.ProtocolHosts
                 LocalityConnectRecorder.RdpCacheUpdate(_rdpSettings.Id, false);
             }
             base.OnFullScreen2Window?.Invoke(base.ConnectionId);
-            // TODO 从 taskbar 隐藏
-            // ShowInTaskbar = false;
-
-            this.FormBorderStyle = FormBorderStyle.Sizable;
-            this.Width = 800;
-            this.Height = 600;
+#if DEBUG
+            if (base.OnFullScreen2Window == null)
+            {
+                this.FormBorderStyle = FormBorderStyle.Sizable;
+                this.Width = 800;
+                this.Height = 600;
+            }
+#endif
 #else
             // TODO 获取 tab 的尺寸，并设置为对应尺寸
             this.FormBorderStyle = FormBorderStyle.Sizable;

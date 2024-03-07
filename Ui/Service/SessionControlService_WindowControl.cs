@@ -22,6 +22,7 @@ using Stylet;
 using ProtocolHostStatus = _1RM.View.Host.ProtocolHosts.ProtocolHostStatus;
 using _1RM.Service.DataSource;
 using System.Collections.Generic;
+using System.Windows.Forms;
 using _1RM.Service.Locality;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
@@ -59,6 +60,7 @@ namespace _1RM.Service
             else
                 throw new NullReferenceException($"can not find host by connectionId = `{connectionId}`");
 
+            host.DetachFromHostBase();
             host.GoFullScreen();
 
             // remove from tab
@@ -92,16 +94,13 @@ namespace _1RM.Service
             // get tab
             TabWindowView tab = GetOrCreateTabWindow(host.LastTabToken);
 
-            // assign host to tab
-            if (tab.GetViewModel().Items.All(x => x.Content.ConnectionId != connectionId))
-            {
-                tab.GetViewModel().AddItem(new TabItemViewModel(host.AttachToHostBase(), host.ProtocolServer.DisplayName));
-            }
-            else
-            {
-                // just show
-                tab.GetViewModel().SelectedItem = tab.GetViewModel().Items.First(x => x.Content.ConnectionId != connectionId);
-            }
+            var h = host.AttachToHostBase();
+            tab.GetViewModel().AddItem(new TabItemViewModel(h, host.ProtocolServer.DisplayName));
+            host.FormBorderStyle = FormBorderStyle.Sizable;
+            host.ShowInTaskbar = true;
+            host.Width = 800;
+            host.Height = 600;
+
             tab.Activate();
             SimpleLogHelper.Debug($@"MoveSessionToTabWindow: Moved host({host.GetHashCode()}) to tab({tab.GetHashCode()})");
             PrintCacheCount();
