@@ -37,20 +37,20 @@ namespace _1RM.View.Host.ProtocolHosts
             _form = form;
             InitializeComponent();
 
-            _panel = new System.Windows.Forms.Panel
-            {
-                BackColor = System.Drawing.Color.Transparent,
-                Dock = System.Windows.Forms.DockStyle.Fill,
-                BorderStyle = BorderStyle.None
-            };
-            _panel.SizeChanged += PanelOnSizeChanged;
-            FormsHost.Child = _panel;
-            _form.Closed += FormOnClosed;
+            //_panel = new System.Windows.Forms.Panel
+            //{
+            //    BackColor = System.Drawing.Color.Transparent,
+            //    Dock = System.Windows.Forms.DockStyle.Fill,
+            //    BorderStyle = BorderStyle.None
+            //};
+            //_panel.SizeChanged += PanelOnSizeChanged;
+            //FormsHost.Child = _panel;
+            //_form.Closed += FormOnClosed;
 
 
-            _form.FormBorderStyle = FormBorderStyle.None;
-            _form.WindowState = FormWindowState.Maximized;
-            _form.Handle.SetParentEx(_panel.Handle);
+            //_form.FormBorderStyle = FormBorderStyle.None;
+            //_form.WindowState = FormWindowState.Maximized;
+            //_form.Handle.SetParentEx(_panel.Handle);
 
             if (form.IsLoaded)
             {
@@ -78,7 +78,7 @@ namespace _1RM.View.Host.ProtocolHosts
 
         private void FormOnClosed(object? sender, EventArgs e)
         {
-            this.Close();
+            this.CloseConn();
         }
 
         #region Resize
@@ -101,7 +101,7 @@ namespace _1RM.View.Host.ProtocolHosts
         }
 
         #endregion
-        
+
 
         public override void Conn()
         {
@@ -121,7 +121,7 @@ namespace _1RM.View.Host.ProtocolHosts
             _form?.ReConn();
         }
 
-        public override void Close()
+        public override void CloseConn()
         {
             if (_form != null)
             {
@@ -133,7 +133,7 @@ namespace _1RM.View.Host.ProtocolHosts
             }
 
             Dispose();
-            base.Close();
+            base.CloseConn();
         }
 
 

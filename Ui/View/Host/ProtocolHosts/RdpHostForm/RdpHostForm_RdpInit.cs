@@ -9,11 +9,7 @@ using Shawn.Utils.Wpf;
 
 namespace _1RM.View.Host.ProtocolHosts
 {
-#if DEV_RDP
-    public partial class RdpHostForm : Form
-#else
     public partial class RdpHostForm : HostBaseWinform
-#endif
     {
         private void InitRdp(int width = 0, int height = 0, bool isReconnecting = false)
         {

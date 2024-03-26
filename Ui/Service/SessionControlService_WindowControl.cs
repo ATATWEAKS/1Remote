@@ -95,7 +95,7 @@ namespace _1RM.Service
             TabWindowView tab = GetOrCreateTabWindow(host.LastTabToken);
 
             var h = host.AttachToHostBase();
-            tab.GetViewModel().AddItem(new TabItemViewModel(h, host.ProtocolServer.DisplayName));
+            //tab.GetViewModel().AddItem(new TabItemViewModel(h, host.ProtocolServer.DisplayName));
             host.FormBorderStyle = FormBorderStyle.Sizable;
             host.ShowInTaskbar = true;
             host.Width = 800;

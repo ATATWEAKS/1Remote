@@ -86,7 +86,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 MenuItems.Add(new System.Windows.Controls.MenuItem()
                 {
                     Header = tb,
-                    Command = new RelayCommand((o) => { Close(); }),
+                    Command = new RelayCommand((o) => { CloseConn(); }),
                 });
             }
 
@@ -202,7 +202,7 @@ namespace _1RM.View.Host.ProtocolHosts
         /// <summary>
         /// disconnect the session and close host window
         /// </summary>
-        public virtual void Close()
+        public virtual void CloseConn()
         {
             this.OnProtocolClosed?.Invoke(ConnectionId);
         }

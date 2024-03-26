@@ -13,11 +13,7 @@ using Shawn.Utils.WpfResources.Theme.Styles;
 
 namespace _1RM.View.Host.ProtocolHosts
 {
-#if DEV_RDP
-    public partial class RdpHostForm : Form
-#else
     public partial class RdpHostForm : HostBaseWinform
-#endif
     {
 #if DEV_RDP
         public Window? ParentWindow { get; set; }

@@ -13,8 +13,8 @@ using Stylet;
 using System.Windows;
 using System.Diagnostics;
 using System.Windows.Forms.VisualStyles;
-using _1RM.Service;
 #if !DEV_RDP
+using _1RM.Service;
 using _1RM.Model;
 using _1RM.Service.Locality;
 using _1RM.Utils;
@@ -53,12 +53,8 @@ namespace _1RM.View.Host.ProtocolHosts
             base.WndProc(ref m);
         }
     }
-
-
-    public partial class RdpHostForm : Form
-#else
-    public partial class RdpHostForm : HostBaseWinform
 #endif
+    public partial class RdpHostForm : HostBaseWinform
     {
         private readonly AxMsRdpClient9NotSafeForScriptingEx _rdpClient;
         private readonly RDP _rdpSettings;
@@ -72,16 +68,6 @@ namespace _1RM.View.Host.ProtocolHosts
         private readonly WinformMaskLayer _maskLayer = new WinformMaskLayer();
 
 #if DEV_RDP
-        public enum ProtocolHostStatus
-        {
-            NotInit,
-            Initializing,
-            Initialized,
-            Connecting,
-            Connected,
-            Disconnected,
-            WaitingForReconnect
-        }
         public ProtocolHostStatus Status { get; set; }
         public bool CanFullScreen { get; protected set; }
         public Action<string>? OnProtocolClosed { get; set; } = null;
@@ -252,12 +238,14 @@ namespace _1RM.View.Host.ProtocolHosts
 
         public override void GoFullScreen()
         {
-            if (_rdpSettings.RdpFullScreenFlag == ERdpFullScreenFlag.Disable
-                || _rdpClient.FullScreen == true)
+            Execute.OnUIThreadSync(() =>
             {
-                return;
-            }
-            _rdpClient.FullScreen = true; // this will invoke OnRequestGoFullScreen -> MakeNormal2FullScreen
+                if (_rdpSettings.RdpFullScreenFlag == ERdpFullScreenFlag.Disable)
+                {
+                    return;
+                }
+                _rdpClient.FullScreen = true; // this will invoke OnRequestGoFullScreen -> MakeNormal2FullScreen
+            });
         }
 
         private int _retryCount = 0;
@@ -379,18 +367,18 @@ namespace _1RM.View.Host.ProtocolHosts
 
         private void OnGoToFullScreenRequested()
         {
-//#if !DEV_RDP
-//            if (ParentWindow is TabWindowView)
-//            {
-//                // full-all-screen session switch to TabWindow, and click "Reconn" button, will entry this case.
-//                _rdpClient.FullScreen = false;
-//                if (_rdpSettings.IsTmpSession() == false)
-//                {
-//                    LocalityConnectRecorder.RdpCacheUpdate(_rdpSettings.Id, false);
-//                }
-//                return;
-//            }
-//#endif
+            //#if !DEV_RDP
+            //            if (ParentWindow is TabWindowView)
+            //            {
+            //                // full-all-screen session switch to TabWindow, and click "Reconn" button, will entry this case.
+            //                _rdpClient.FullScreen = false;
+            //                if (_rdpSettings.IsTmpSession() == false)
+            //                {
+            //                    LocalityConnectRecorder.RdpCacheUpdate(_rdpSettings.Id, false);
+            //                }
+            //                return;
+            //            }
+            //#endif
 
 
             var screenSize = this.GetScreenSizeIfRdpIsFullScreen();
@@ -443,7 +431,10 @@ namespace _1RM.View.Host.ProtocolHosts
                 // 全屏模式下客户端机器发生了屏幕分辨率改变，则将RDP还原到窗口模式（仿照 MSTSC 的逻辑）
                 if (_rdpClient?.FullScreen == true)
                 {
-                    _rdpClient.FullScreen = false;
+                    Execute.OnUIThreadSync(() =>
+                    {
+                        _rdpClient.FullScreen = false;
+                    });
                 }
             }
         }
@@ -494,36 +485,41 @@ namespace _1RM.View.Host.ProtocolHosts
 
         public override void ReConn()
         {
-            if (_rdpClient.Connected == 1)
+            Execute.OnUIThreadSync(() =>
             {
-                return;
-            }
-            if (GetStatus() != ProtocolHostStatus.Connected
-                && GetStatus() != ProtocolHostStatus.Disconnected)
-            {
-                SimpleLogHelper.Warning($"RDP Host: Call ReConn, but current status = " + GetStatus());
-                return;
-            }
-            else
-            {
-                SimpleLogHelper.Warning($"RDP Host: Call ReConn");
-            }
-            SetStatus(ProtocolHostStatus.WaitingForReconnect);
+                if (_rdpClient.Connected == 1)
+                {
+                    return;
+                }
 
-            SetStatus(ProtocolHostStatus.NotInit);
+                if (GetStatus() != ProtocolHostStatus.Connected
+                    && GetStatus() != ProtocolHostStatus.Disconnected)
+                {
+                    SimpleLogHelper.Warning($"RDP Host: Call ReConn, but current status = " + GetStatus());
+                    return;
+                }
+                else
+                {
+                    SimpleLogHelper.Warning($"RDP Host: Call ReConn");
+                }
 
-            int w = 0;
-            int h = 0;
+                SetStatus(ProtocolHostStatus.WaitingForReconnect);
+
+                SetStatus(ProtocolHostStatus.NotInit);
+
+                int w = 0;
+                int h = 0;
 #if !DEV_RDP
-            if (AttachedHost.ParentWindow is TabWindowView tab)
-            {
-                var size = tab.GetTabContentSize(ColorAndBrushHelper.ColorIsTransparent(this._rdpSettings.ColorHex) == true);
-                w = (int)size.Width;
-                h = (int)size.Height;
-            }
+                if (AttachedHost.ParentWindow is TabWindowView tab)
+                {
+                    var size = tab.GetTabContentSize(ColorAndBrushHelper.ColorIsTransparent(this._rdpSettings.ColorHex) == true);
+                    w = (int)size.Width;
+                    h = (int)size.Height;
+                }
 #endif
-            RdpInitDisplay(w, h, true);
-            Conn();
+                RdpInitDisplay(w, h, true);
+                Conn();
+            });
         }
 
 

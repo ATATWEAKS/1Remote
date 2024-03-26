@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
 using _1RM.Model.Protocol;
 using _1RM.Model.Protocol.Base;
 using _1RM.Model.ProtocolRunner;
@@ -143,13 +144,15 @@ namespace _1RM.Service
             }
 
             Debug.Assert(!_connectionId2WinFormHosts.ContainsKey(host.ConnectionId));
-
-            host.OnProtocolClosed += OnRequestCloseConnection;
-            host.OnFullScreen2Window += this.MoveSessionToTabWindow;
-            this.MoveSessionToFullScreen(host.ConnectionId);
-
             _connectionId2WinFormHosts.TryAdd(host.ConnectionId, hbw);
-            host.Conn();
+
+            hbw.OnProtocolClosed += OnRequestCloseConnection;
+            hbw.OnFullScreen2Window += this.MoveSessionToTabWindow;
+            hbw.StartPosition = FormStartPosition.CenterScreen;
+            hbw.Width = 600;
+            hbw.Height = 400;
+            hbw.Show();
+            //hbw.Conn();
             SimpleLogHelper.Debug($@"Start Conn: {server.DisplayName}({server.GetHashCode()}) by host({host.GetHashCode()}) with full");
         }
 
@@ -173,10 +176,10 @@ namespace _1RM.Service
                         // get display area size for host
                         Debug.Assert(!_connectionId2TabHosts.ContainsKey(host.ConnectionId));
                         host.OnProtocolClosed += OnRequestCloseConnection;
-                        if (host is IntegrateHostForWinFrom { Form: IHostBase h })
-                        {
-                            h.OnFullScreen2Window += this.MoveSessionToTabWindow;
-                        }
+                        //if (host is IntegrateHostForWinFrom { Form: IHostBase h })
+                        //{
+                        //    h.OnFullScreen2Window += this.MoveSessionToTabWindow;
+                        //}
                         host.OnFullScreen2Window += this.MoveSessionToTabWindow;
                         tab.GetViewModel().AddItem(new TabItemViewModel(hb, p.DisplayName));
                         _connectionId2TabHosts.TryAdd(host.ConnectionId, hb);
@@ -267,7 +270,10 @@ namespace _1RM.Service
                 // rdp full screen
                 if (protocolClone.IsThisTimeConnWithFullScreen())
                 {
-                    this.ConnectWithFullScreen(protocolClone, new InternalDefaultRunner(RDP.ProtocolName));
+                    Execute.OnUIThreadSync(() =>
+                    {
+                        this.ConnectWithFullScreen(protocolClone, new InternalDefaultRunner(RDP.ProtocolName));
+                    });
                     return;
                 }
             }

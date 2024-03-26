@@ -116,11 +116,11 @@ namespace _1RM.View.Host.ProtocolHosts
             SetStatus(ProtocolHostStatus.Connected);
         }
 
-        public override void Close()
+        public override void CloseConn()
         {
             _vmRemote?.Release();
             SetStatus(ProtocolHostStatus.Disconnected);
-            base.Close();
+            base.CloseConn();
         }
 
         public override void FocusOnMe()

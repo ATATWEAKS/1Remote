@@ -80,7 +80,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 MenuItems.Add(new System.Windows.Controls.MenuItem()
                 {
                     Header = tb,
-                    Command = new RelayCommand((o) => { Close(); })
+                    Command = new RelayCommand((o) => { CloseConn(); })
                 });
             }
         }
@@ -130,12 +130,12 @@ namespace _1RM.View.Host.ProtocolHosts
             _invokeOnClosedWhenDisconnected = true;
         }
 
-        public override void Close()
+        public override void CloseConn()
         {
             SetStatus(ProtocolHostStatus.Disconnected);
             if (Vnc.IsConnected)
                 Vnc.Disconnect();
-            base.Close();
+            base.CloseConn();
         }
 
         public override ProtocolHostType GetProtocolHostType()
@@ -183,7 +183,7 @@ namespace _1RM.View.Host.ProtocolHosts
 
         private void BtnCancel_OnClick(object sender, RoutedEventArgs e)
         {
-            Close();
+            CloseConn();
         }
 
         private void BtnReconn_OnClick(object sender, RoutedEventArgs e)

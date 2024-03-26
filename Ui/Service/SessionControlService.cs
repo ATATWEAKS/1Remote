@@ -270,15 +270,17 @@ namespace _1RM.Service
             {
                 foreach (var connectionId in connectionIds)
                 {
-                    if (!_connectionId2TabHosts.TryRemove(connectionId, out var host)) continue;
+                    if (_connectionId2TabHosts.TryRemove(connectionId, out var host))
+                    {
 
-                    SimpleLogHelper.Debug($@"MarkProtocolHostToClose: marking to close: {host.GetType().Name}(id = {connectionId}, hash = {host.GetHashCode()})");
+                        SimpleLogHelper.Debug($@"MarkProtocolHostToClose: marking to close: {host.GetType().Name}(id = {connectionId}, hash = {host.GetHashCode()})");
 
-                    host.OnProtocolClosed -= OnRequestCloseConnection;
-                    host.OnFullScreen2Window -= this.MoveSessionToTabWindow;
-                    _hostToBeDispose.Enqueue(host);
-                    host.ProtocolServer.RunScriptAfterDisconnected();
-                    PrintCacheCount();
+                        host.OnProtocolClosed -= OnRequestCloseConnection;
+                        host.OnFullScreen2Window -= this.MoveSessionToTabWindow;
+                        _hostToBeDispose.Enqueue(host);
+                        host.ProtocolServer.RunScriptAfterDisconnected();
+                        PrintCacheCount();
+                    }
 
 #if NETFRAMEWORK
                     foreach (var kv in _token2TabWindows.ToArray())
@@ -303,22 +305,26 @@ namespace _1RM.Service
                     }
 
                     // hide full
+                    Execute.OnUIThreadSync(() =>
+                    {
 #if NETFRAMEWORK
-                    foreach (var kv in _connectionId2WinFormHosts.Where(x => x.Key == connectionId).ToArray())
-                    {
-                        var key = kv.Key;
-                        var full = kv.Value;
-#else
-                    foreach (var (key, full) in _connectionId2WinFormHosts.ToArray().Where(x => x.Key == connectionId).ToArray())
-                    {
-#endif
-                        if (full.IsClosing == false)
+                        foreach (var kv in _connectionId2WinFormHosts.Where(x => x.Key == connectionId).ToArray())
                         {
-                            full.Hide();
-                            full.Close();
+                            var key = kv.Key;
+                            var full = kv.Value;
+#else
+                        foreach (var (key, full) in _connectionId2WinFormHosts.ToArray().Where(x => x.Key == connectionId).ToArray())
+                        {
+#endif
+                            if (full.IsClosing == false)
+                            {
+                                full.Hide();
+                                full.Close();
+                            }
+                            _connectionId2WinFormHosts.TryRemove(key, out _);
                         }
-                        _connectionId2WinFormHosts.TryRemove(key, out _);
-                    }
+
+                    });
                 }
 
                 //// Mark Unhandled Protocol To Close
@@ -370,7 +376,7 @@ namespace _1RM.Service
                     }
                     else
                     {
-                        host.Close();
+                        host.CloseConn();
                     }
                 }
                 catch (Exception e)

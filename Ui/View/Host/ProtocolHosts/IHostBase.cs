@@ -40,7 +40,7 @@ public interface IHostBase
     /// <summary>
     /// disconnect the session and close host window
     /// </summary>
-    public void Close();
+    public void CloseConn();
 
     public void GoFullScreen();
     public void FocusOnMe();

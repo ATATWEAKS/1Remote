@@ -743,10 +743,10 @@ namespace _1RM.View.Host.ProtocolHosts
             });
         }
 
-        public override void Close()
+        public override void CloseConn()
         {
             this.Dispose();
-            base.Close();
+            base.CloseConn();
         }
 
         public override void GoFullScreen()

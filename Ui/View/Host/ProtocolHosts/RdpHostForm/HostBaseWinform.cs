@@ -8,8 +8,6 @@ using System.Windows.Interop;
 using System.Windows.Navigation;
 using _1RM.Model;
 using _1RM.Model.Protocol.Base;
-using _1RM.View.Settings;
-using Org.BouncyCastle.Asn1.X509;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.Wpf.Controls;
@@ -20,7 +18,25 @@ using CheckBox = System.Windows.Controls.CheckBox;
 
 namespace _1RM.View.Host.ProtocolHosts;
 
-public abstract class HostBaseWinform : Form, IHostBase
+#if DEV_RDP
+using RdpRunner.UC;
+public enum ProtocolHostStatus
+{
+    NotInit,
+    Initializing,
+    Initialized,
+    Connecting,
+    Connected,
+    Disconnected,
+    WaitingForReconnect
+}
+public enum ProtocolHostType
+{
+    Native,
+    Integrate
+}
+
+public abstract class HostBaseWinform : Form
 {
     public bool IsClosing { get; private set; } = false;
     public bool IsClosed { get; private set; } = false;
@@ -82,97 +98,7 @@ public abstract class HostBaseWinform : Form, IHostBase
         FormBorderStyle = FormBorderStyle.Sizable;
         ProtocolServer = protocolServer;
         CanFullScreen = canFullScreen;
-
-        // Add right click menu
-        Execute.OnUIThreadSync(() =>
-        {
-
-            {
-                var tb = new TextBlock();
-                tb.SetResourceReference(TextBlock.TextProperty, "Reconnect");
-                MenuItems.Add(new System.Windows.Controls.MenuItem()
-                {
-                    Header = tb,
-                    Command = new RelayCommand((o) => { ReConn(); })
-                });
-            }
-
-            {
-                var tb = new TextBlock();
-                tb.SetResourceReference(TextBlock.TextProperty, "Close");
-                MenuItems.Add(new System.Windows.Controls.MenuItem()
-                {
-                    Header = tb,
-                    Command = new RelayCommand((o) => { Close(); }),
-                });
-            }
-
-            {
-                var cb = new CheckBox
-                {
-                    Content = IoC.Translate("Show XXX button", IoC.Translate("Reconnect") ?? ""),
-                    IsHitTestVisible = false,
-                };
-
-                var binding = new Binding("TabHeaderShowReConnectButton")
-                {
-                    Source = SettingsPage,
-                    Mode = BindingMode.TwoWay,
-                    UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
-                };
-                cb.SetBinding(CheckBox.IsCheckedProperty, binding);
-                MenuItems.Add(new System.Windows.Controls.MenuItem()
-                {
-                    Header = cb,
-                    Command = new RelayCommand((_) => { SettingsPage.TabHeaderShowReConnectButton = !SettingsPage.TabHeaderShowReConnectButton; }),
-                });
-            }
-
-            {
-                var cb = new CheckBox
-                {
-                    Content = IoC.Translate("Show XXX button", IoC.Translate("Close") ?? ""),
-                    IsHitTestVisible = false,
-                };
-
-                var binding = new Binding("TabHeaderShowCloseButton")
-                {
-                    Source = SettingsPage,
-                    Mode = BindingMode.TwoWay,
-                    UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
-                };
-                cb.SetBinding(CheckBox.IsCheckedProperty, binding);
-                MenuItems.Add(new System.Windows.Controls.MenuItem()
-                {
-                    Header = cb,
-                    Command = new RelayCommand((_) => { SettingsPage.TabHeaderShowCloseButton = !SettingsPage.TabHeaderShowCloseButton; }),
-                });
-
-                Closing += (sender, args) => IsClosing = true;
-                Closed += (sender, args) =>
-                {
-                    IsClosing = true;
-                    IsClosed = true;
-                };
-            }
-
-            //MenuItems.Add(new RibbonApplicationSplitMenuItem());
-
-            var actions = protocolServer.GetActions(true);
-            foreach (var action in actions)
-            {
-                var tb = new TextBlock()
-                {
-                    Text = action.ActionName,
-                };
-                MenuItems.Add(new System.Windows.Controls.MenuItem()
-                {
-                    Header = tb,
-                    Command = new RelayCommand((o) => { action.Run(); }),
-                });
-            }
-        });
-
+        
         Load += (sender, args) =>
         {
             IsLoaded = true;
@@ -194,11 +120,6 @@ public abstract class HostBaseWinform : Form, IHostBase
             }
         }
     }
-
-    /// <summary>
-    /// for xaml binding
-    /// </summary>
-    public SettingsPageViewModel SettingsPage => IoC.Get<SettingsPageViewModel>();
 
     public bool CanFullScreen { get; protected set; }
 
@@ -233,7 +154,7 @@ public abstract class HostBaseWinform : Form, IHostBase
     /// <summary>
     /// disconnect the session and close host window
     /// </summary>
-    public virtual void CloseConn()
+    public new virtual void Close()
     {
         this.OnProtocolClosed?.Invoke(ConnectionId);
     }
@@ -272,33 +193,30 @@ public abstract class HostBaseWinform : Form, IHostBase
     /// <summary>
     /// 为了在 tab 中显示，必须把这个 winfrom 窗口托管到 IntegrateHostForWinFrom
     /// </summary>
-    public IntegrateHostForWinFrom? AttachedHost { get; private set; }= null;
+    public IntegrateHostForWinFrom? AttachedHost { get; private set; } = null;
     public IntegrateHostForWinFrom AttachToHostBase()
     {
         FormBorderStyle = FormBorderStyle.None;
         WindowState = FormWindowState.Maximized;
         ShowInTaskbar = false;
-
         AttachedHost ??= new IntegrateHostForWinFrom(this);
         return AttachedHost;
     }
 
 
-    public void DetachFromHostBase()
-    {
-        if(AttachedHost == null)
-            return;
+    //public void DetachFromHostBase()
+    //{
+    //    if (AttachedHost == null)
+    //        return;
 
-        FormBorderStyle = FormBorderStyle.Sizable;
-        WindowState = FormWindowState.Normal;
-        ShowInTaskbar = true;
+    //    FormBorderStyle = FormBorderStyle.Sizable;
+    //    WindowState = FormWindowState.Normal;
+    //    ShowInTaskbar = true;
+    //    Handle.SetParentEx(IntPtr.Zero);
 
-        Execute.OnUIThreadSync(() =>
-        {
-            Handle.SetParentEx(IntPtr.Zero);
-        });
-        AttachedHost.Dispose();
-        AttachedHost = null;
-    }
+    //    AttachedHost.Dispose();
+    //    AttachedHost = null;
+    //}
 
 }
+#endif
